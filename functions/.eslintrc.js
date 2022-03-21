@@ -29,5 +29,6 @@ module.exports = {
     'import/no-unresolved': 0,
     'semi': [1, 'never'],
     'max-len': 0,
+    'indent': [1, 2],
   },
 }

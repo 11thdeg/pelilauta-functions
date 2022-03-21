@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "skaldbase-test"
-  }
+    "default": "skaldbase-test",
+    "production": "skaldbase"
+  },
+  "targets": {}
 }
