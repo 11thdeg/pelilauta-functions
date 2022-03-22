@@ -1,12 +1,11 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
 
-admin.initializeApp()
-const db = admin.firestore()
-
 export const onReplyToThread = functions.region('europe-west1')
   .firestore
   .document('stream/{threadId}/comments/{commentId}').onCreate(async (snap, context) => {
+    const db = admin.firestore()
+
     const parent = await db.doc(`stream/${context.params.threadId}`).get()
     const replyData = snap.data()
     const threadData = parent.data()
