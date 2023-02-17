@@ -2,7 +2,7 @@ import {onReplyToThread} from './notifications/onReplyToThread'
 import {onPageCreated, onPageUpdated} from './sites/onPageChange'
 import {onWatchThread} from './threads/onWatchThread'
 import {onProfileLovedUpdate} from './notifications/onProfileLovedUpdate'
-import {onReactionsLovedCreate} from './notifications/onReactionsLovedCreate'
+import {onReactionsCreate} from './notifications/onReactionsLovedCreate'
 import * as admin from 'firebase-admin'
 
 admin.initializeApp()
@@ -13,5 +13,5 @@ export {
   onPageUpdated,
   onWatchThread,
   onProfileLovedUpdate,
-  onReactionsLovedCreate,
+  onReactionsCreate,
 }
