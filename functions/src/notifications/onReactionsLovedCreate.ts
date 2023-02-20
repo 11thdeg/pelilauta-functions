@@ -37,9 +37,8 @@ async function handleReplyReaction(data: admin.firestore.DocumentData, context: 
  * Also decrements the site's loves count when a user unloves a site
  *
  * @param {admin.firestore.DocumentData} data DocData for the reaction
- * @param {functions.EventContext} context function context
  */
-async function handleSiteReaction(data: admin.firestore.DocumentData, context: functions.EventContext) {
+async function handleSiteReaction(data: admin.firestore.DocumentData) {
   const db = admin.firestore()
 
   const siteKey = data.targetKey
@@ -55,11 +54,25 @@ async function handleSiteReaction(data: admin.firestore.DocumentData, context: f
       lovesCount: admin.firestore.FieldValue.increment(1),
     })
 
+    const actorData = await db.collection('profiles').doc(data.actor).get()
+
+    if (!actorData.exists) throw new Error('Actor does not exist, or an invalid actor key was provided')
+
+    const actor = actorData.data()
+    if (actor === undefined) throw new Error('Actor data is undefined, this is likely a bug in Firestore')
+
+    const actorSites = actor.lovedSites || []
+    actorSites.push(siteKey)
+
+    await db.collection('profiles').doc(data.actor).update({
+      lovedSites: actorSites,
+    })
+
     for (const owner of site.owners) {
       await db.collection('notifications').add({
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         to: owner,
-        from: context.params.uid,
+        from: data.actor,
         message: 'notification.site.loved',
         targetKey: siteKey,
         targetType: 'site.loved',
@@ -67,7 +80,23 @@ async function handleSiteReaction(data: admin.firestore.DocumentData, context: f
       })
     }
   } else if (data.type === 'unlove') {
+    const actorData = await db.collection('profiles').doc(data.actor).get()
+
+    if (!actorData.exists) throw new Error('Actor does not exist, or an invalid actor key was provided')
+
+    const actor = actorData.data()
+    if (actor === undefined) throw new Error('Actor data is undefined, this is likely a bug in Firestore')
+
+    const actorSites = actor.lovedSites || []
+    const index = actorSites.indexOf(siteKey)
+    actorSites.splice(index, 1)
+
+    await db.collection('profiles').doc(data.actor).update({
+      lovedSites: actorSites,
+    })
+
     if (site.lovesCount === 0) throw new Error('Site loves count is 0, this is likely an error in the database')
+
     await db.collection('sites').doc(siteKey).update({
       lovesCount: admin.firestore.FieldValue.increment(-1),
     })
@@ -83,7 +112,7 @@ export const onReactionsCreate = functions.region('europe-west1')
     if (data.targetEntry === undefined) throw new Error('Reaction target entry is undefined, this is likely a bug in Client')
     if (data.type === undefined) throw new Error('Reaction target type is undefined, this is likely a bug in Client')
 
-    if (data.targetEntry === 'sites') handleSiteReaction(data, context)
+    if (data.targetEntry === 'sites') handleSiteReaction(data)
     else if (data.targetEntry === 'comments') handleReplyReaction(data, context)
     else throw new Error('Invalid target entry provided, this is likely a bug in Client ' + data.targetEntry + ' ' + data.type)
   })
